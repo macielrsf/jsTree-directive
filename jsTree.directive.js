@@ -9,7 +9,11 @@
 /* global $ */
 /* global angular */
 var ngJSTree = angular.module('jsTree.directive', []);
-ngJSTree.directive('jsTree', ['$http', 'Session', function($http, Session) {
+ngJSTree.directive('jsTree', ['$http', '$log', 'Session', function($http, $log, Session) {
+
+  var authorization = '{{token_type}} {{token}}'
+  .replace('{{token_type}}', Session.auth.token_type)
+  .replace('{{token}}', Session.auth.access_token);
 
   var treeDir = {
     restrict: 'EA',
@@ -49,8 +53,12 @@ ngJSTree.directive('jsTree', ['$http', 'Session', function($http, Session) {
 
         if (config.plugins.indexOf('search') >= 0) {
           config.search = config.search || {};
-          config.search.show_only_matches = true;
-          config.search.show_only_matches_children = true;
+          config.search.ajax = {
+            url: config.treeAjax,
+            headers: {
+              Authorization: authorization 
+            }
+          };
 
           var to = false;
           if (e.next().attr('class') !== 'ng-tree-search') {
@@ -65,6 +73,20 @@ ngJSTree.directive('jsTree', ['$http', 'Session', function($http, Session) {
                 }, 250);
               });
           }
+        }
+
+        if (config.plugins.indexOf('massload') >= 0) {
+          config.massload = config.massload || {};
+          config.massload = {
+            url: config.treeMassload,
+            data: function(ids) {
+              return { ids: ids };
+            },
+            headers: {
+              Authorization: authorization
+            },
+            type: 'POST'
+          };
         }
 
         if (config.plugins.indexOf('checkbox') >= 0) {
@@ -136,10 +158,6 @@ ngJSTree.directive('jsTree', ['$http', 'Session', function($http, Session) {
     // Initialisation function
     link: function(s, e, a) { // scope, element, attribute \O/
       $(function() {
-        var authorization = '{{token_type}} {{token}}'
-          .replace('{{token_type}}', Session.auth.token_type)
-          .replace('{{token}}', Session.auth.access_token);
-
         var config = {};
         // Load a config from the scope
         if (a.treeConfig && s[a.treeConfig] !== undefined) {
