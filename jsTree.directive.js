@@ -53,26 +53,11 @@ ngJSTree.directive('jsTree', ['$http', '$log', 'Session', function($http, $log, 
 
         if (config.plugins.indexOf('search') >= 0) {
           config.search = config.search || {};
-          config.search.ajax = {
-            url: config.treeAjax,
-            headers: {
-              Authorization: authorization 
-            }
-          };
+          config.search.show_only_matches = true;
 
-          var to = false;
-          if (e.next().attr('class') !== 'ng-tree-search') {
-            e.after('<input type="text" placeholder="Search Tree" class="ng-tree-search"/>')
-              .next()
-              .on('keyup', function(ev) {
-                if (to) {
-                  clearTimeout(to);
-                }
-                to = setTimeout(function() {
-                  treeDir.tree.jstree(true).search(ev.target.value);
-                }, 250);
-              });
-          }
+          $('#custom-search').keyup(function() {
+              treeDir.tree.jstree('search', $(this).val());
+          });
         }
 
         if (config.plugins.indexOf('massload') >= 0) {
